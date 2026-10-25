@@ -42,5 +42,5 @@ Aplicación web minimalista que permite subir un PDF y leerlo mediante Presentac
 - [x] Lógica WPM y bucle de renderizado — ver [[Algoritmo-RSVP]]
 - [x] UI: modo oscuro, controles y atajos — ver [[Uso]]
 - [x] Diseño responsive (tablet 16:9 y móvil) — ver [[Arquitectura]]
-- [ ] Control de versiones en GitHub — ver [[Git-y-GitHub]]
+- [x] Control de versiones en GitHub (`danielgrela/FasterReading`) — ver [[Git-y-GitHub]]
 - [ ] Mejoras futuras — ver [[Roadmap]]
