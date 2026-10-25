@@ -1,0 +1,39 @@
+# Dependencias / build (por si se añade Vite o tooling más adelante)
+node_modules/
+dist/
+build/
+.cache/
+.parcel-cache/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Entorno
+.env
+.env.*
+!.env.example
+
+# SO / editores
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+
+# Obsidian: configuración local del vault (se versiona solo el contenido de docs/)
+docs/.obsidian/workspace*.json
+docs/.obsidian/cache
+docs/.trash/
+
+# PDFs de prueba personales (no subir documentos del usuario)
+*.pdf
+!tests/fixtures/*.pdf
+
+# Configuración local de Claude Code / agentes (rutas y permisos de la máquina)
+.claude/
+CLAUDE.local.md
+
+# Vercel CLI: guarda IDs de proyecto/organización y variables descargadas
+.vercel/

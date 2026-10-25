@@ -1,0 +1,11 @@
+# Archivos que no se publican en Vercel (solo se sirve la app estática)
+docs/
+tests/
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+README.md
+.editorconfig
+.prettierrc.json
+.prettierignore
+*.pdf
