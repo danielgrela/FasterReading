@@ -329,6 +329,62 @@ kbd {
   background: var(--bg);
 }
 
+/* ---------- Menú de opciones ---------- */
+.options {
+  position: relative;
+}
+.options summary {
+  list-style: none; /* sin el triángulo por defecto de <details> */
+  user-select: none;
+}
+.options summary::-webkit-details-marker {
+  display: none;
+}
+.options[open] summary {
+  border-color: var(--accent);
+}
+/* Se abre hacia arriba (el panel está al pie) y alineado a la derecha del botón */
+.options-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.5rem);
+  z-index: 10;
+  width: min(26rem, calc(100vw - 2.5rem));
+  max-height: 70dvh;
+  overflow-y: auto;
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 0.25);
+}
+.options-menu .wpm {
+  flex: none;
+  max-width: none;
+  flex-wrap: wrap;
+}
+.options-menu .wpm label {
+  flex-basis: 100%;
+}
+.options-group {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0.85rem 0 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+.options-group legend {
+  float: left; /* coloca la leyenda dentro del borde superior, como un título más */
+  margin-bottom: 0.1rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 /* ---------- Botones ---------- */
 .btn {
   appearance: none;
@@ -392,8 +448,8 @@ input[type="range"]:disabled {
     display: grid;
     grid-template-columns: auto 1fr;
     grid-template-areas:
-      "buttons goto"
-      "wpm toggle";
+      "buttons options"
+      "goto goto";
     gap: 0.85rem 1.5rem;
   }
   .buttons {
@@ -401,15 +457,9 @@ input[type="range"]:disabled {
   }
   .goto {
     grid-area: goto;
-    justify-self: end;
   }
-  .wpm {
-    grid-area: wpm;
-    max-width: none;
-    min-width: 0;
-  }
-  .toggle {
-    grid-area: toggle;
+  .options {
+    grid-area: options;
     justify-self: end;
   }
 }
@@ -461,17 +511,24 @@ input[type="range"]:disabled {
     grid-template-columns: 1fr;
     grid-template-areas:
       "buttons"
-      "wpm"
       "goto"
-      "toggle";
+      "options";
     gap: 0.75rem;
   }
   .buttons .btn {
     flex: 1;
   }
   .goto,
-  .toggle {
+  .options {
     justify-self: stretch;
+  }
+  .options summary {
+    text-align: center;
+  }
+  /* El menú ocupa todo el ancho del botón */
+  .options-menu {
+    left: 0;
+    width: auto;
   }
   /* "Ir a" y "Página", cada uno en su fila */
   .goto {
@@ -486,9 +543,6 @@ input[type="range"]:disabled {
     flex: 1;
     min-width: 0;
     width: auto;
-  }
-  .wpm label {
-    display: none; /* el sufijo "WPM" ya dice qué es */
   }
   .ms {
     display: none;

@@ -1,7 +1,7 @@
 // Controlador de UI: conecta el DOM con el extractor de PDF y el motor RSVP.
 // El ?v= debe coincidir con el de index.html (rompe la caché del navegador).
-import { extractPagesFromPdf, tokenizePages } from "./pdf-extractor.js?v=9";
-import { Reader, findPage, findTarget, formatRemaining, msPerWord, pageAt, pivotIndex } from "./reader.js?v=9";
+import { extractPagesFromPdf, tokenizePages } from "./pdf-extractor.js?v=11";
+import { Reader, findPage, findTarget, formatRemaining, msPerWord, pageAt, pivotIndex } from "./reader.js?v=11";
 
 const $ = (id) => document.getElementById(id);
 const el = {
@@ -26,6 +26,8 @@ const el = {
   progressText: $("progressText"),
   theme: $("themeBtn"),
   breakToggle: $("breakToggle"),
+  contextToggle: $("contextToggle"),
+  options: $("options"),
   drop: $("dropzone"),
 };
 const wLeft = el.word.querySelector(".w-left");
@@ -51,6 +53,16 @@ const store = {
 
 // Índice de la primera palabra de cada página del PDF cargado (ver tokenizePages).
 let pageStarts = [];
+
+// Partes del contador que se pueden ocultar desde Opciones: casilla y clave de localStorage.
+// Todas visibles por defecto.
+const COUNTER_PARTS = {
+  word: { input: $("hideWord"), key: "fr.hideWord" },
+  page: { input: $("hidePage"), key: "fr.hidePage" },
+  percent: { input: $("hidePercent"), key: "fr.hidePercent" },
+  time: { input: $("hideTime"), key: "fr.hideTime" },
+};
+const hidden = { word: false, page: false, percent: false, time: false };
 
 // ---------- Motor ----------
 const reader = new Reader({
@@ -88,15 +100,16 @@ function renderCounter(index = reader.index, total = reader.words.length) {
   const page = total ? pageAt(pageStarts, index) + 1 : 0;
   // Porcentaje leído: la palabra actual cuenta como leída, así la última da 100 %.
   const percent = total ? Math.floor(((index + 1) / total) * 100) : 0;
+  // Solo las partes que no se han ocultado en Opciones; sin ninguna, el contador desaparece.
+  const parts = [];
+  if (!hidden.word)
+    parts.push(`Palabra ${total ? (index + 1).toLocaleString("es") : 0} de ${total.toLocaleString("es")}`);
+  if (!hidden.page) parts.push(`Página ${page.toLocaleString("es")} de ${pageStarts.length.toLocaleString("es")}`);
+  if (!hidden.percent) parts.push(`${percent} % leído`);
+  if (!hidden.time) parts.push(`${total ? formatRemaining(reader.remainingMs()) : "0 min"} restantes`);
   // Espacios duros dentro de cada bloque: en pantallas estrechas solo se parte entre bloques.
-  el.counter.textContent = [
-    `Palabra ${total ? (index + 1).toLocaleString("es") : 0} de ${total.toLocaleString("es")}`,
-    `Página ${page.toLocaleString("es")} de ${pageStarts.length.toLocaleString("es")}`,
-    `${percent} % leído`,
-    `${total ? formatRemaining(reader.remainingMs()) : "0 min"} restantes`,
-  ]
-    .map((s) => s.replaceAll(" ", "\u00a0"))
-    .join(" · ");
+  el.counter.textContent = parts.map((s) => s.replaceAll(" ", "\u00a0")).join(" · ");
+  el.counter.hidden = parts.length === 0;
 }
 
 function renderState(playing) {
@@ -157,6 +170,50 @@ function applyBreakMode(on) {
 el.breakToggle.addEventListener("change", (e) => {
   applyBreakMode(e.target.checked);
   e.target.blur(); // devuelve los atajos de teclado (Espacio = play/pausa)
+});
+
+// ---------- Palabras de contexto (anterior y siguiente) ----------
+function applyContext(on) {
+  el.contextToggle.checked = on;
+  el.prevWord.hidden = !on;
+  el.nextWord.hidden = !on;
+  store.set("fr.context", on ? "1" : "0");
+}
+el.contextToggle.addEventListener("change", (e) => {
+  applyContext(e.target.checked);
+  e.target.blur(); // devuelve los atajos de teclado
+});
+
+// ---------- Opciones: ocultar partes del contador ----------
+function applyHidden(part, on) {
+  hidden[part] = on;
+  COUNTER_PARTS[part].input.checked = on;
+  store.set(COUNTER_PARTS[part].key, on ? "1" : "0");
+  renderCounter();
+}
+for (const [part, { input }] of Object.entries(COUNTER_PARTS)) {
+  input.addEventListener("change", (e) => {
+    applyHidden(part, e.target.checked);
+    e.target.blur(); // devuelve los atajos de teclado
+  });
+}
+
+// ---------- Menú de opciones ----------
+const optionsSummary = el.options.querySelector("summary");
+// Con el ratón se quita el foco al abrir o cerrar, para que Espacio siga siendo play/pausa;
+// con el teclado (detail === 0) se mantiene, para poder recorrer el menú.
+optionsSummary.addEventListener("click", (e) => {
+  if (e.detail > 0) optionsSummary.blur();
+});
+// Se cierra al hacer clic fuera o con Escape.
+document.addEventListener("click", (e) => {
+  if (el.options.open && !el.options.contains(e.target)) el.options.open = false;
+});
+el.options.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && el.options.open) {
+    el.options.open = false;
+    optionsSummary.focus();
+  }
 });
 
 // ---------- Carga de PDF ----------
@@ -301,7 +358,7 @@ document.addEventListener("keydown", (e) => {
   if (e.ctrlKey || e.metaKey || e.altKey) return; // no interferir con Ctrl+R, etc.
   if (e.target instanceof HTMLInputElement && e.target.type === "range" && e.key.startsWith("Arrow")) return; // deja a los sliders su comportamiento
   if (e.target instanceof HTMLInputElement && e.target.type !== "range") return; // se está escribiendo en un campo
-  if (e.key === " " && e.target instanceof HTMLButtonElement) return; // el botón ya gestiona su click
+  if (e.key === " " && e.target instanceof Element && e.target.closest("button, summary")) return; // el botón (o el menú) ya gestiona su click
   switch (e.key) {
     case " ":
       e.preventDefault();
@@ -343,6 +400,8 @@ el.theme.addEventListener("click", () =>
 setTheme(store.get("fr.theme") === "light" ? "light" : "dark");
 applyWpm(store.get("fr.wpm") || 300);
 applyBreakMode(store.get("fr.breaks") !== "0"); // activado por defecto
+applyContext(store.get("fr.context") !== "0"); // activado por defecto
+for (const [part, { key }] of Object.entries(COUNTER_PARTS)) applyHidden(part, store.get(key) === "1"); // visibles por defecto
 renderWord("", 0, 0);
 renderState(false);
 

@@ -8,7 +8,7 @@
       name="description"
       content="Lee cualquier PDF palabra por palabra a la velocidad que elijas. 100% local, sin backend."
     />
-    <link rel="stylesheet" href="css/style.css?v=9" />
+    <link rel="stylesheet" href="css/style.css?v=11" />
   </head>
   <body>
     <header class="topbar">
@@ -92,20 +92,48 @@
           </span>
         </div>
 
-        <div class="wpm">
-          <label for="wpmRange">Velocidad</label>
-          <input id="wpmRange" type="range" min="50" max="700" step="10" value="300" />
-          <span class="wpm-num">
-            <input id="wpmInput" class="field" type="number" min="50" max="700" step="1" value="300" aria-label="WPM" />
-            WPM
-          </span>
-          <span id="msOut" class="ms">200 ms/palabra</span>
-        </div>
+        <!-- Menú desplegable de opciones: se abre hacia arriba porque el panel está abajo. -->
+        <details id="options" class="options">
+          <summary class="btn">⚙ Opciones</summary>
+          <div class="options-menu">
+            <div class="wpm">
+              <label for="wpmRange">Velocidad</label>
+              <input id="wpmRange" type="range" min="50" max="700" step="10" value="300" />
+              <span class="wpm-num">
+                <input
+                  id="wpmInput"
+                  class="field"
+                  type="number"
+                  min="50"
+                  max="700"
+                  step="1"
+                  value="300"
+                  aria-label="WPM"
+                />
+                WPM
+              </span>
+              <span id="msOut" class="ms">200 ms/palabra</span>
+            </div>
 
-        <label class="toggle" title="Pausa del doble de los ms/palabra al final de cada frase y de cada párrafo">
-          <input id="breakToggle" type="checkbox" checked />
-          Frases separadas
-        </label>
+            <label class="toggle" title="Pausa del doble de los ms/palabra al final de cada frase y de cada párrafo">
+              <input id="breakToggle" type="checkbox" checked />
+              Frases separadas
+            </label>
+
+            <label class="toggle" title="Palabra anterior encima y siguiente debajo de la actual, atenuadas">
+              <input id="contextToggle" type="checkbox" checked />
+              Mostrar palabra anterior y siguiente
+            </label>
+
+            <fieldset class="options-group">
+              <legend>Contador</legend>
+              <label class="toggle"><input id="hideWord" type="checkbox" /> Ocultar palabra</label>
+              <label class="toggle"><input id="hidePage" type="checkbox" /> Ocultar página</label>
+              <label class="toggle"><input id="hidePercent" type="checkbox" /> Ocultar porcentaje de lectura</label>
+              <label class="toggle"><input id="hideTime" type="checkbox" /> Ocultar tiempo restante</label>
+            </fieldset>
+          </div>
+        </details>
       </div>
 
       <p class="hint">
@@ -115,6 +143,6 @@
     </footer>
 
     <!-- ?v= evita que el navegador use un app.js antiguo de la caché: súbelo al cambiar el JS (ver Setup). -->
-    <script type="module" src="js/app.js?v=9"></script>
+    <script type="module" src="js/app.js?v=11"></script>
   </body>
 </html>

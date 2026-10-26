@@ -17,6 +17,8 @@ Volver a [[Home]].
 - [x] Contador de página e «Ir a página» (a la primera línea de la página) — ver [[Uso]] y [[Algoritmo-RSVP]]
 - [x] Palabras anterior y siguiente atenuadas encima y debajo de la actual — ver [[Uso]]
 - [x] Tiempo restante aproximado en el contador, al WPM actual — ver [[Uso]] y [[Algoritmo-RSVP]]
+- [x] Menú desplegable de opciones (velocidad, frases separadas y ocultar partes del contador) — ver [[Uso]] y [[Arquitectura]]
+- [x] Opción para mostrar solo la palabra actual (sin anterior ni siguiente) — ver [[Uso]]
 - [ ] Pausas extra en puntuación interna (`,` `;`) opcionales — ver [[Algoritmo-RSVP]]
 - [ ] OCR para PDF escaneados (tesseract.js) — ver [[Procesamiento-PDF]]
 - [ ] Recordar la posición por documento
