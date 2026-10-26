@@ -8,7 +8,7 @@
       name="description"
       content="Lee cualquier PDF palabra por palabra a la velocidad que elijas. 100% local, sin backend."
     />
-    <link rel="stylesheet" href="css/style.css?v=4" />
+    <link rel="stylesheet" href="css/style.css?v=9" />
   </head>
   <body>
     <header class="topbar">
@@ -30,7 +30,9 @@
     </header>
 
     <main class="stage" id="stage">
-      <p id="counter" class="counter" aria-live="off">Palabra 0 de 0</p>
+      <p id="counter" class="counter" aria-live="off">Palabra 0 de 0 · Página 0 de 0 · 0 % leído · 0 min restantes</p>
+      <p id="prevWord" class="ctx ctx-prev" aria-hidden="true"></p>
+      <p id="nextWord" class="ctx ctx-next" aria-hidden="true"></p>
       <div id="word" class="word" role="status" aria-live="off" aria-label="Palabra actual">
         <span class="w-left"></span><span class="w-pivot">·</span><span class="w-right"></span>
       </div>
@@ -62,16 +64,32 @@
         </div>
 
         <div class="goto">
-          <label for="gotoInput">Ir a</label>
-          <input
-            id="gotoInput"
-            class="field"
-            type="text"
-            placeholder="nº o palabra"
-            autocomplete="off"
-            aria-label="Número de palabra o palabra a buscar"
-          />
-          <button id="gotoBtn" class="btn" type="button">Ir</button>
+          <span class="goto-group">
+            <label for="gotoInput">Ir a</label>
+            <input
+              id="gotoInput"
+              class="field"
+              type="text"
+              placeholder="nº o palabra"
+              autocomplete="off"
+              aria-label="Número de palabra o palabra a buscar"
+            />
+            <button id="gotoBtn" class="btn" type="button">Ir</button>
+          </span>
+          <span class="goto-group">
+            <label for="pageInput">Página</label>
+            <input
+              id="pageInput"
+              class="field"
+              type="number"
+              min="1"
+              step="1"
+              placeholder="nº"
+              autocomplete="off"
+              aria-label="Número de página"
+            />
+            <button id="pageBtn" class="btn" type="button">Ir</button>
+          </span>
         </div>
 
         <div class="wpm">
@@ -84,7 +102,7 @@
           <span id="msOut" class="ms">200 ms/palabra</span>
         </div>
 
-        <label class="toggle" title="Pausa de 1 segundo al final de cada frase y de cada párrafo">
+        <label class="toggle" title="Pausa del doble de los ms/palabra al final de cada frase y de cada párrafo">
           <input id="breakToggle" type="checkbox" checked />
           Frases separadas
         </label>
@@ -97,6 +115,6 @@
     </footer>
 
     <!-- ?v= evita que el navegador use un app.js antiguo de la caché: súbelo al cambiar el JS (ver Setup). -->
-    <script type="module" src="js/app.js?v=4"></script>
+    <script type="module" src="js/app.js?v=9"></script>
   </body>
 </html>

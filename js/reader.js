@@ -1,6 +1,7 @@
 // Motor RSVP: gestiona el índice actual y el temporizador.
 // Fórmula exacta: intervalo (ms) = (60 / WPM) * 1000
-// (+ la pausa de "frases separadas" tras fin de frase o párrafo, si está activa)
+// (+ la pausa de "frases separadas" tras fin de frase o párrafo, si está activa:
+//  breakFactor × ese mismo intervalo)
 
 export function msPerWord(wpm) {
   return (60 / wpm) * 1000;
@@ -88,6 +89,53 @@ export function findTarget(words, query, from = -1) {
   return -1;
 }
 
+/**
+ * Página (0-based) a la que pertenece la palabra `index`: la última cuyo inicio es <= index.
+ * Las páginas sin texto comparten inicio con la siguiente y nunca se devuelven.
+ * @param {number[]} pageStarts - índice de la primera palabra de cada página.
+ * @returns {number} página 0-based, o -1 si no hay páginas.
+ */
+export function pageAt(pageStarts, index) {
+  let lo = 0;
+  let hi = pageStarts.length - 1;
+  let found = -1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (pageStarts[mid] <= index) {
+      found = mid;
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  return found;
+}
+
+/**
+ * Resuelve el destino de "Ir a página": la primera palabra de la página `page` (1-based,
+ * acotada al número de páginas). Si la página no tiene texto, la siguiente que lo tenga.
+ * @returns {{index:number, page:number}|null} índice 0-based y página 1-based a la que se
+ *   llega, o null si no hay texto desde esa página hasta el final.
+ */
+export function findPage(pageStarts, page, total) {
+  if (!pageStarts.length || !Number.isFinite(page)) return null;
+  const p = Math.max(1, Math.min(pageStarts.length, Math.round(page)));
+  const index = pageStarts[p - 1];
+  if (index >= total) return null;
+  return { index, page: pageAt(pageStarts, index) + 1 };
+}
+
+/**
+ * Texto aproximado del tiempo restante: minutos redondeados hacia arriba
+ * ("≈ 12 min", "≈ 1 h 05 min") o "< 1 min" si queda menos de un minuto.
+ */
+export function formatRemaining(ms) {
+  if (ms < 60000) return "< 1 min";
+  const min = Math.ceil(ms / 60000);
+  if (min < 60) return `≈ ${min} min`;
+  return `≈ ${Math.floor(min / 60)} h ${String(min % 60).padStart(2, "0")} min`;
+}
+
 export class Reader {
   /**
    * @param {object} hooks
@@ -105,8 +153,9 @@ export class Reader {
     this.playing = false;
     this._timer = null;
     this._nextAt = 0; // marca de tiempo (performance.now) de la próxima palabra
-    this.breakPause = 0; // ms extra tras fin de frase o de párrafo (0 = desactivado)
+    this.breakFactor = 0; // pausa extra tras fin de frase o de párrafo, en múltiplos de ms/palabra (0 = desactivado)
     this._paragraphEnds = new Set();
+    this._breaksFrom = [0]; // _breaksFrom[i]: nº de palabras con pausa de frase en [i, final)
   }
 
   /**
@@ -117,21 +166,36 @@ export class Reader {
     this.pause();
     this.words = words;
     this._paragraphEnds = new Set(paragraphEnds);
+    // Precuenta de pausas de frase (dependen solo del texto): así remainingMs() es O(1).
+    this._breaksFrom = new Array(words.length + 1).fill(0);
+    for (let i = words.length - 2; i >= 0; i--) {
+      const isBreak = this._paragraphEnds.has(i) || endsSentence(words[i]);
+      this._breaksFrom[i] = this._breaksFrom[i + 1] + (isBreak ? 1 : 0);
+    }
     this.index = 0;
     this._emit();
   }
 
-  // Modo frases separadas: pausa extra (ms) tras cada frase y cada párrafo.
-  setBreakPause(ms) {
-    this.breakPause = Math.max(0, ms);
+  /** Tiempo estimado (ms) para terminar desde la palabra actual (incluida), al WPM actual. */
+  remainingMs() {
+    const left = this.words.length - this.index;
+    if (left <= 0) return 0;
+    const ms = msPerWord(this.wpm);
+    return left * ms + this._breaksFrom[this.index] * ms * this.breakFactor;
+  }
+
+  // Modo frases separadas: pausa extra tras cada frase y cada párrafo, igual a
+  // `factor` veces los ms/palabra (así escala con la velocidad).
+  setBreakFactor(factor) {
+    this.breakFactor = Math.max(0, factor);
   }
 
   /** Tiempo (ms) que la palabra `i` permanece en pantalla antes de pasar a la siguiente. */
   delayAfter(i) {
-    let ms = msPerWord(this.wpm);
+    const ms = msPerWord(this.wpm);
     const isLast = i >= this.words.length - 1;
-    if (this.breakPause > 0 && !isLast && (this._paragraphEnds.has(i) || endsSentence(this.words[i] ?? ""))) {
-      ms += this.breakPause;
+    if (this.breakFactor > 0 && !isLast && (this._paragraphEnds.has(i) || endsSentence(this.words[i] ?? ""))) {
+      return ms + ms * this.breakFactor;
     }
     return ms;
   }
@@ -177,7 +241,11 @@ export class Reader {
   seek(i) {
     if (this.words.length === 0) return;
     this.index = Math.max(0, Math.min(this.words.length - 1, Math.round(i)));
-    if (this.playing) this._nextAt = performance.now() + this.delayAfter(this.index);
+    if (this.playing) {
+      clearTimeout(this._timer);
+      this._nextAt = performance.now() + this.delayAfter(this.index);
+      this._schedule();
+    }
     this._emit();
   }
 

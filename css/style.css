@@ -82,6 +82,7 @@ body {
   display: grid;
   place-items: center;
   min-height: 0;
+  container-type: size; /* .ctx usa su altura (cqh) para no solaparse con el contador */
 }
 .word {
   /* 3 columnas: [izquierda alineada a la derecha] [pivote] [derecha alineada a la izquierda]
@@ -131,12 +132,44 @@ body {
   top: calc(100% + 0.1em);
 }
 
+/* Palabras de contexto (anterior encima, siguiente debajo): más pequeñas y atenuadas
+   para no robar el foco. Son absolutas respecto al centro del escenario, así no
+   desplazan la palabra actual; la distancia deja sitio a las marcas de fijación. */
+.ctx {
+  --ctx-gap: calc(var(--word-size) * 1.05);
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 0 1rem;
+  text-align: center;
+  font-family: var(--mono);
+  /* 45 % de la palabra actual, pero sin invadir el contador ni el mensaje (2.75rem
+     reservados arriba y abajo): en escenarios bajos se encoge y, si no cabe, desaparece. */
+  font-size: max(0px, min(var(--word-size) * 0.45, (50cqh - var(--ctx-gap) - 2.75rem) / 1.2));
+  line-height: 1.2;
+  color: var(--text);
+  opacity: 0.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: none;
+  pointer-events: none;
+}
+.ctx-prev {
+  bottom: calc(50% + var(--ctx-gap));
+}
+.ctx-next {
+  top: calc(50% + var(--ctx-gap));
+}
+
 .counter {
   position: absolute;
   top: 1rem;
   left: 0;
   right: 0;
   margin: 0;
+  padding: 0 1rem;
   text-align: center;
   font-family: var(--mono);
   font-size: 0.9rem;
@@ -227,7 +260,13 @@ body {
 .goto {
   display: flex;
   align-items: center;
+  gap: 0.5rem 1rem;
+}
+.goto-group {
+  display: flex;
+  align-items: center;
   gap: 0.5rem;
+  white-space: nowrap;
 }
 .toggle {
   display: flex;
@@ -258,6 +297,11 @@ body {
 }
 #gotoInput {
   width: 14ch;
+}
+#pageInput {
+  width: 7ch;
+  font-family: var(--mono);
+  text-align: right;
 }
 #wpmInput {
   width: 7ch;
@@ -399,6 +443,13 @@ input[type="range"]:disabled {
   .file-name {
     display: none;
   }
+  /* Contador más pequeño: si aun así no cabe en una línea, parte en dos dentro de
+     los 2.75rem que las palabras de contexto dejan libres arriba. */
+  .counter {
+    top: 0.6rem;
+    font-size: 0.75rem;
+    line-height: 1.3;
+  }
   .panel {
     padding-top: 0.75rem;
     gap: 0.75rem;
@@ -422,7 +473,16 @@ input[type="range"]:disabled {
   .toggle {
     justify-self: stretch;
   }
-  #gotoInput {
+  /* "Ir a" y "Página", cada uno en su fila */
+  .goto {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .goto-group label {
+    min-width: 7ch;
+  }
+  #gotoInput,
+  #pageInput {
     flex: 1;
     min-width: 0;
     width: auto;

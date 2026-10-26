@@ -10,9 +10,13 @@ aliases:
 
 Volver a [[Home]].
 
-- [x] Modo frases separadas: pausa de 1 s tras cada frase y párrafo — ver [[Algoritmo-RSVP]]
+- [x] Modo frases separadas: pausa del doble de los ms/palabra tras cada frase y párrafo — ver [[Algoritmo-RSVP]]
+- [x] Porcentaje leído en el contador — ver [[Uso]]
 - [x] Diseño responsive para tablet (16:9) y móvil — ver [[Arquitectura]]
 - [x] Preparar el repo para GitHub y despliegue en Vercel — ver [[Setup]] y [[Git-y-GitHub]]
+- [x] Contador de página e «Ir a página» (a la primera línea de la página) — ver [[Uso]] y [[Algoritmo-RSVP]]
+- [x] Palabras anterior y siguiente atenuadas encima y debajo de la actual — ver [[Uso]]
+- [x] Tiempo restante aproximado en el contador, al WPM actual — ver [[Uso]] y [[Algoritmo-RSVP]]
 - [ ] Pausas extra en puntuación interna (`,` `;`) opcionales — ver [[Algoritmo-RSVP]]
 - [ ] OCR para PDF escaneados (tesseract.js) — ver [[Procesamiento-PDF]]
 - [ ] Recordar la posición por documento

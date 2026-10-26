@@ -1,13 +1,15 @@
 // Controlador de UI: conecta el DOM con el extractor de PDF y el motor RSVP.
 // El ?v= debe coincidir con el de index.html (rompe la caché del navegador).
-import { extractTextFromPdf, tokenizeWithBreaks } from "./pdf-extractor.js?v=4";
-import { Reader, findTarget, msPerWord, pivotIndex } from "./reader.js?v=4";
+import { extractPagesFromPdf, tokenizePages } from "./pdf-extractor.js?v=9";
+import { Reader, findPage, findTarget, formatRemaining, msPerWord, pageAt, pivotIndex } from "./reader.js?v=9";
 
 const $ = (id) => document.getElementById(id);
 const el = {
   input: $("pdfInput"),
   fileName: $("fileName"),
   word: $("word"),
+  prevWord: $("prevWord"),
+  nextWord: $("nextWord"),
   message: $("message"),
   play: $("playBtn"),
   pause: $("pauseBtn"),
@@ -17,6 +19,8 @@ const el = {
   counter: $("counter"),
   gotoInput: $("gotoInput"),
   gotoBtn: $("gotoBtn"),
+  pageInput: $("pageInput"),
+  pageBtn: $("pageBtn"),
   msOut: $("msOut"),
   progress: $("progress"),
   progressText: $("progressText"),
@@ -45,6 +49,9 @@ const store = {
   },
 };
 
+// Índice de la primera palabra de cada página del PDF cargado (ver tokenizePages).
+let pageStarts = [];
+
 // ---------- Motor ----------
 const reader = new Reader({
   onWord: renderWord,
@@ -65,11 +72,31 @@ function renderWord(word, index, total) {
     wPivot.textContent = chars[p];
     wRight.textContent = chars.slice(p + 1).join("");
   }
+  // Contexto: palabra anterior encima y siguiente debajo, atenuadas (ver .ctx en el CSS).
+  el.prevWord.textContent = word ? (reader.words[index - 1] ?? "") : "";
+  el.nextWord.textContent = word ? (reader.words[index + 1] ?? "") : "";
   el.progress.value = index;
   el.progressText.textContent = total
     ? `${index + 1} / ${total} (${Math.round(((index + 1) / total) * 100)}%)`
     : "0 / 0";
-  el.counter.textContent = `Palabra ${total ? (index + 1).toLocaleString("es") : 0} de ${total.toLocaleString("es")}`;
+  renderCounter(index, total);
+}
+
+// Contador superior. También se llama al cambiar el WPM o las frases separadas,
+// porque el tiempo restante depende de ambos.
+function renderCounter(index = reader.index, total = reader.words.length) {
+  const page = total ? pageAt(pageStarts, index) + 1 : 0;
+  // Porcentaje leído: la palabra actual cuenta como leída, así la última da 100 %.
+  const percent = total ? Math.floor(((index + 1) / total) * 100) : 0;
+  // Espacios duros dentro de cada bloque: en pantallas estrechas solo se parte entre bloques.
+  el.counter.textContent = [
+    `Palabra ${total ? (index + 1).toLocaleString("es") : 0} de ${total.toLocaleString("es")}`,
+    `Página ${page.toLocaleString("es")} de ${pageStarts.length.toLocaleString("es")}`,
+    `${percent} % leído`,
+    `${total ? formatRemaining(reader.remainingMs()) : "0 min"} restantes`,
+  ]
+    .map((s) => s.replaceAll(" ", "\u00a0"))
+    .join(" · ");
 }
 
 function renderState(playing) {
@@ -80,6 +107,8 @@ function renderState(playing) {
   // "Ir a" solo se desactiva durante la reproducción.
   el.gotoInput.disabled = playing;
   el.gotoBtn.disabled = playing;
+  el.pageInput.disabled = playing;
+  el.pageBtn.disabled = playing;
   if (playing) setMessage("");
 }
 
@@ -99,6 +128,7 @@ function applyWpm(value) {
   el.msOut.textContent = `${msPerWord(wpm).toFixed(0)} ms/palabra`;
   reader.setWpm(wpm);
   store.set("fr.wpm", String(wpm));
+  renderCounter();
 }
 el.wpmRange.addEventListener("input", (e) => applyWpm(e.target.value));
 // Valor manual: mientras se escribe, el slider lo sigue en cuanto el número es válido;
@@ -110,17 +140,19 @@ el.wpmInput.addEventListener("input", (e) => {
     el.msOut.textContent = `${msPerWord(v).toFixed(0)} ms/palabra`;
     reader.setWpm(v);
     store.set("fr.wpm", String(v));
+    renderCounter();
   }
 });
 el.wpmInput.addEventListener("change", (e) => applyWpm(e.target.value));
 
 // ---------- Frases separadas ----------
-const BREAK_PAUSE_MS = 1000; // pausa extra tras cada frase y cada párrafo
+const BREAK_FACTOR = 2; // pausa extra tras cada frase y párrafo: el doble de los ms/palabra
 
 function applyBreakMode(on) {
   el.breakToggle.checked = on;
-  reader.setBreakPause(on ? BREAK_PAUSE_MS : 0);
+  reader.setBreakFactor(on ? BREAK_FACTOR : 0);
   store.set("fr.breaks", on ? "1" : "0");
+  renderCounter();
 }
 el.breakToggle.addEventListener("change", (e) => {
   applyBreakMode(e.target.checked);
@@ -140,8 +172,8 @@ async function loadFile(file) {
   setMessage("Leyendo PDF…");
 
   try {
-    const raw = await extractTextFromPdf(file, (p, t) => setMessage(`Extrayendo texto… página ${p} de ${t}`));
-    const { words, paragraphEnds } = tokenizeWithBreaks(raw);
+    const pages = await extractPagesFromPdf(file, (p, t) => setMessage(`Extrayendo texto… página ${p} de ${t}`));
+    const { words, paragraphEnds, pageStarts: starts } = tokenizePages(pages);
 
     if (words.length === 0) {
       clearDocument();
@@ -149,6 +181,7 @@ async function loadFile(file) {
       return;
     }
 
+    pageStarts = starts;
     reader.load(words, paragraphEnds);
     el.progress.max = words.length - 1;
     el.progress.disabled = false;
@@ -163,6 +196,7 @@ async function loadFile(file) {
 
 // Vacía el lector y deja la barra de progreso como al inicio.
 function clearDocument() {
+  pageStarts = [];
   reader.load([]);
   el.progress.max = 0;
   el.progress.disabled = true;
@@ -226,6 +260,40 @@ el.gotoInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
     e.preventDefault();
     goTo();
+  }
+});
+
+// Ir al principio de una página: su primera línea, nunca el final de una frase de la anterior.
+function goToPage() {
+  if (reader.playing) return;
+  if (!reader.words.length) {
+    setMessage("Sube un PDF primero.", true);
+    return;
+  }
+  const asked = Number(el.pageInput.value);
+  if (el.pageInput.value.trim() === "" || !Number.isInteger(asked)) {
+    setMessage("Escribe un número de página.", true);
+    return;
+  }
+  const target = findPage(pageStarts, asked, reader.words.length);
+  if (!target) {
+    setMessage(`No hay texto a partir de la página ${asked}.`, true);
+    return;
+  }
+  reader.seek(target.index);
+  const clamped = Math.max(1, Math.min(pageStarts.length, asked));
+  setMessage(
+    target.page === clamped
+      ? `Página ${target.page}. Pulsa Play para seguir desde aquí.`
+      : `La página ${clamped} no tiene texto: vas a la página ${target.page}. Pulsa Play para seguir.`,
+  );
+  el.pageInput.blur(); // devuelve los atajos de teclado
+}
+el.pageBtn.addEventListener("click", goToPage);
+el.pageInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    goToPage();
   }
 });
 
