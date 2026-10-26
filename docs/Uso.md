@@ -27,6 +27,8 @@ Cada parte del contador se puede quitar desde **Opciones → Contador**: **Ocult
 
 Encima de la palabra actual aparece la **anterior** y debajo la **siguiente**, más pequeñas y atenuadas: dan contexto sin quitar el foco del centro. En pantallas con poca altura (móvil en horizontal) se encogen y, si no caben sin tapar el contador, se ocultan. La casilla **Mostrar palabra anterior y siguiente** del menú **Opciones** (activada por defecto) las quita para ver solo la palabra actual.
 
+En **Opciones → Texto** se elige el **Tipo de letra** de la palabra y de las de contexto (Monoespaciada, por defecto; Sans serif; Serif; Alta legibilidad, con letras más anchas y espaciadas) y su **Tamaño** (50–150 %, de 10 en 10). El tamaño es un porcentaje sobre el automático, que ya se adapta a la pantalla: al 100 % se ve como siempre. Las fuentes son del sistema, así que no se descarga nada. El contador y los controles no cambian.
+
 ## Atajos
 
 | Tecla   | Acción             |
@@ -40,6 +42,6 @@ Encima de la palabra actual aparece la **anterior** y debajo la **siguiente**, m
 
 - La letra roja es el punto de reconocimiento óptimo ([[Algoritmo-RSVP]]); mantén la vista fija en el centro.
 - Los PDF escaneados (solo imagen) no tienen texto: ver limitaciones en [[Procesamiento-PDF]].
-- El WPM, el tema, el modo frases separadas, las palabras de contexto y las partes ocultas del contador se recuerdan en `localStorage` (`fr.breaks` y `fr.context`: solo `"0"` los desactiva; si no hay valor guardado, quedan activados. `fr.hideWord`, `fr.hidePage`, `fr.hidePercent` y `fr.hideTime`: solo `"1"` oculta la parte).
+- El WPM, el tema, el modo frases separadas, las palabras de contexto, el tipo de letra, el tamaño y las partes ocultas del contador se recuerdan en `localStorage` (`fr.font`: `mono`, `sans`, `serif` o `legible`; `fr.size`: porcentaje. `fr.breaks` y `fr.context`: solo `"0"` los desactiva; si no hay valor guardado, quedan activados. `fr.hideWord`, `fr.hidePage`, `fr.hidePercent` y `fr.hideTime`: solo `"1"` oculta la parte).
 - En tablet y móvil la interfaz se adapta sola (vertical u horizontal); en pantallas táctiles no se muestra la ayuda de atajos.
 - Mientras escribes en un cuadro de texto los atajos de teclado no se aplican.

@@ -1,7 +1,7 @@
 // Controlador de UI: conecta el DOM con el extractor de PDF y el motor RSVP.
 // El ?v= debe coincidir con el de index.html (rompe la caché del navegador).
-import { extractPagesFromPdf, tokenizePages } from "./pdf-extractor.js?v=11";
-import { Reader, findPage, findTarget, formatRemaining, msPerWord, pageAt, pivotIndex } from "./reader.js?v=11";
+import { extractPagesFromPdf, tokenizePages } from "./pdf-extractor.js?v=12";
+import { Reader, findPage, findTarget, formatRemaining, msPerWord, pageAt, pivotIndex } from "./reader.js?v=12";
 
 const $ = (id) => document.getElementById(id);
 const el = {
@@ -27,6 +27,9 @@ const el = {
   theme: $("themeBtn"),
   breakToggle: $("breakToggle"),
   contextToggle: $("contextToggle"),
+  fontSelect: $("fontSelect"),
+  sizeRange: $("sizeRange"),
+  sizeOut: $("sizeOut"),
   options: $("options"),
   drop: $("dropzone"),
 };
@@ -183,6 +186,39 @@ el.contextToggle.addEventListener("change", (e) => {
   applyContext(e.target.checked);
   e.target.blur(); // devuelve los atajos de teclado
 });
+
+// ---------- Tipo de letra y tamaño de la palabra ----------
+// Cada opción es una pila de fuentes del sistema (sin descargas); el CSS la aplica
+// a la palabra actual y a las de contexto mediante --word-font.
+const FONTS = {
+  mono: "var(--mono)",
+  sans: "var(--sans)",
+  serif: 'Georgia, "Times New Roman", Times, serif',
+  legible: 'Verdana, Tahoma, "DejaVu Sans", sans-serif',
+};
+const SIZE_MIN = 50;
+const SIZE_MAX = 150;
+
+function applyFont(name) {
+  const font = name in FONTS ? name : "mono";
+  el.fontSelect.value = font;
+  document.documentElement.style.setProperty("--word-font", FONTS[font]);
+  store.set("fr.font", font);
+}
+el.fontSelect.addEventListener("change", (e) => {
+  applyFont(e.target.value);
+  e.target.blur(); // devuelve los atajos de teclado
+});
+
+// Porcentaje sobre el tamaño automático (--word-size), que ya se adapta a la pantalla.
+function applySize(value) {
+  const size = Math.max(SIZE_MIN, Math.min(SIZE_MAX, Math.round(Number(value) / 10) * 10 || 100));
+  el.sizeRange.value = size;
+  el.sizeOut.textContent = `${size} %`;
+  document.documentElement.style.setProperty("--word-scale", String(size / 100));
+  store.set("fr.size", String(size));
+}
+el.sizeRange.addEventListener("input", (e) => applySize(e.target.value));
 
 // ---------- Opciones: ocultar partes del contador ----------
 function applyHidden(part, on) {
@@ -358,6 +394,7 @@ document.addEventListener("keydown", (e) => {
   if (e.ctrlKey || e.metaKey || e.altKey) return; // no interferir con Ctrl+R, etc.
   if (e.target instanceof HTMLInputElement && e.target.type === "range" && e.key.startsWith("Arrow")) return; // deja a los sliders su comportamiento
   if (e.target instanceof HTMLInputElement && e.target.type !== "range") return; // se está escribiendo en un campo
+  if (e.target instanceof HTMLSelectElement) return; // las flechas y Espacio manejan el desplegable
   if (e.key === " " && e.target instanceof Element && e.target.closest("button, summary")) return; // el botón (o el menú) ya gestiona su click
   switch (e.key) {
     case " ":
@@ -401,6 +438,8 @@ setTheme(store.get("fr.theme") === "light" ? "light" : "dark");
 applyWpm(store.get("fr.wpm") || 300);
 applyBreakMode(store.get("fr.breaks") !== "0"); // activado por defecto
 applyContext(store.get("fr.context") !== "0"); // activado por defecto
+applyFont(store.get("fr.font"));
+applySize(store.get("fr.size") || 100);
 for (const [part, { key }] of Object.entries(COUNTER_PARTS)) applyHidden(part, store.get(key) === "1"); // visibles por defecto
 renderWord("", 0, 0);
 renderState(false);

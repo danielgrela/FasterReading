@@ -8,7 +8,7 @@
       name="description"
       content="Lee cualquier PDF palabra por palabra a la velocidad que elijas. 100% local, sin backend."
     />
-    <link rel="stylesheet" href="css/style.css?v=11" />
+    <link rel="stylesheet" href="css/style.css?v=12" />
   </head>
   <body>
     <header class="topbar">
@@ -126,6 +126,24 @@
             </label>
 
             <fieldset class="options-group">
+              <legend>Texto</legend>
+              <div class="option-row">
+                <label for="fontSelect">Tipo de letra</label>
+                <select id="fontSelect" class="field">
+                  <option value="mono">Monoespaciada</option>
+                  <option value="sans">Sans serif</option>
+                  <option value="serif">Serif</option>
+                  <option value="legible">Alta legibilidad</option>
+                </select>
+              </div>
+              <div class="option-row">
+                <label for="sizeRange">Tamaño</label>
+                <input id="sizeRange" type="range" min="50" max="150" step="10" value="100" />
+                <span id="sizeOut" class="ms">100 %</span>
+              </div>
+            </fieldset>
+
+            <fieldset class="options-group">
               <legend>Contador</legend>
               <label class="toggle"><input id="hideWord" type="checkbox" /> Ocultar palabra</label>
               <label class="toggle"><input id="hidePage" type="checkbox" /> Ocultar página</label>
@@ -143,6 +161,6 @@
     </footer>
 
     <!-- ?v= evita que el navegador use un app.js antiguo de la caché: súbelo al cambiar el JS (ver Setup). -->
-    <script type="module" src="js/app.js?v=11"></script>
+    <script type="module" src="js/app.js?v=12"></script>
   </body>
 </html>

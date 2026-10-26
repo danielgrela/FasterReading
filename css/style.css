@@ -7,7 +7,9 @@
   --accent: #ff4d4d;
   --accent-ink: #fff;
   /* Limitada también por la altura: en horizontal (móvil o tablet 16:9) el ancho no manda */
-  --word-size: clamp(1.75rem, min(9vw, 16vh), 6.5rem);
+  --word-size: calc(clamp(1.75rem, min(9vw, 16vh), 6.5rem) * var(--word-scale));
+  --word-scale: 1; /* Opciones → Tamaño (app.js) */
+  --word-font: var(--mono); /* Opciones → Tipo de letra (app.js) */
   --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
@@ -91,7 +93,7 @@ body {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   width: 100%;
-  font-family: var(--mono);
+  font-family: var(--word-font);
   font-size: var(--word-size);
   line-height: 1.2;
   white-space: pre;
@@ -143,7 +145,7 @@ body {
   margin: 0;
   padding: 0 1rem;
   text-align: center;
-  font-family: var(--mono);
+  font-family: var(--word-font);
   /* 45 % de la palabra actual, pero sin invadir el contador ni el mensaje (2.75rem
      reservados arriba y abajo): en escenarios bajos se encoge y, si no cabe, desaparece. */
   font-size: max(0px, min(var(--word-size) * 0.45, (50cqh - var(--ctx-gap) - 2.75rem) / 1.2));
@@ -375,6 +377,25 @@ kbd {
   padding: 0.85rem 0 0;
   border: 0;
   border-top: 1px solid var(--border);
+}
+.option-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}
+.option-row label {
+  min-width: 9ch;
+}
+.option-row select {
+  flex: 1;
+}
+.option-row input[type="range"] {
+  flex: 1;
+}
+.option-row .ms {
+  min-width: 5ch;
+  text-align: right;
 }
 .options-group legend {
   float: left; /* coloca la leyenda dentro del borde superior, como un título más */
